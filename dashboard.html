@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #1e1e1e;
+            color: white;
+            text-align: center;
+            margin-top: 100px;
+        }
+
+        .card {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+            width: 300px;
+            margin: auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #81a8a0;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Dashboard</h1>
+    <p id="user"></p>
+    <button onclick="logout()">Logout</button>
+</div>
+
+<script>
+const username = localStorage.getItem("user");
+
+if (!username) {
+    window.location.href = "/login/";
+} else {
+    document.getElementById("user").innerText = "Welcome, " + username;
+}
+
+function logout() {
+    localStorage.removeItem("user");
+    window.location.href = "/login/";
+}
+</script>
+
+</body>
+</html>

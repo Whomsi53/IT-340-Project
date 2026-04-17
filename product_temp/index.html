@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OutOfStock | Product</title>
+
+<link href="/style.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+<div>
+
+<header>
+    <div class="nav-left">
+        <a href="/" style="text-decoration:none;">
+            <h2 style="color:white; margin:0; font-weight:700;">OutOfStock</h2>
+        </a>
+    </div>
+
+    <nav class="nav-right">
+        <div><a href="/login/">Login</a></div>
+        <div>|</div>
+        <div><a href="/shopping-cart/">Cart</a></div>
+    </nav>
+</header>
+
+<main>
+<div class="product-grid">
+
+<div class="main-left">
+    <img id="productImg" style="width:80%; padding-left:10%;">
+</div>
+
+<div class="product-template-main-right">
+<div class="product-template-card">
+
+<div class="product-template-card-row">
+    <p id="productName" style="font-weight:600;"></p>
+    <p class="text-muted">No customer reviews available</p>
+</div>
+
+<h4 class="price"></h4>
+
+<p id="productDescription" style="font-weight:bold; font-size:16px;"></p>
+
+<!-- SINGLE DISCLAIMER -->
+<p style="font-size:12px; color:gray; margin-top:5px;">
+    *This is a test product. Checkout functionality is simulated and may use a $0.00 or minimal charge for demonstration purposes.
+</p>
+
+<div class="d-grid gap-2 mt-3">
+    <button class="btn btn-dark" onclick="shoppingCartClick()">
+        Add to Cart
+    </button>
+</div>
+
+<div style="padding-top:20px;">
+    <h3 style="font-weight:600">Product Details</h3>
+    <table>
+        <tr>
+            <td class="subject">Fabric Type:</td>
+            <td>High-quality synthetic blend</td>
+        </tr>
+        <tr>
+            <td class="subject">Origin:</td>
+            <td>Imported</td>
+        </tr>
+    </table>
+</div>
+
+<!-- 🔥 DYNAMIC ABOUT SECTION -->
+<div id="about-pd">
+    <h3 style="font-weight:600">About This Item</h3>
+    <p id="aboutText"></p>
+</div>
+
+</div>
+</div>
+
+</div>
+</main>
+
+<footer>© 2026 OutOfStock. All rights reserved.</footer>
+
+</div>
+
+<!-- TOAST -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999;">
+    <div id="cartToast" class="toast text-bg-dark border-0">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/frontend.js"></script>
+
+<script>
+const productName = sessionStorage.getItem("productName");
+const productPrice = sessionStorage.getItem("productPrice");
+const productImg = sessionStorage.getItem("productImg");
+
+if (productName) {
+    document.getElementById("productName").textContent = productName;
+}
+
+if (productPrice) {
+    document.querySelector(".price").textContent = productPrice;
+}
+
+if (productImg) {
+    document.getElementById("productImg").src = productImg;
+}
+
+// 🔥 MAIN DESCRIPTIONS
+const descriptions = {
+    "Men's Blue Coat": "A modern navy trench coat designed for everyday wear, combining sleek tailoring with durable materials for all-season comfort.",
+    "Men's Brown Coat": "A classic brown overcoat with a timeless silhouette, offering warmth and versatility for both casual and formal settings.",
+    "Men's Black Coat": "A refined black overcoat built for a sharp, professional look, crafted with clean lines and premium fabric.",
+    "Men's Dark Brown Coat": "A rich espresso-toned coat featuring a structured fit and subtle detailing, ideal for colder weather.",
+    "Men's Charcoal Coat": "A charcoal gray overcoat blending minimal design with reliable insulation, perfect for daily wear."
+};
+
+if (productName && descriptions[productName]) {
+    document.getElementById("productDescription").textContent = descriptions[productName];
+}
+
+// 🔥 ABOUT SECTION (UNIQUE PER PRODUCT)
+const aboutDescriptions = {
+    "Men's Blue Coat": "Engineered for versatility, this coat transitions seamlessly from casual outings to professional settings, offering both style and durability.",
+    "Men's Brown Coat": "A dependable wardrobe staple designed to provide warmth and a timeless look throughout the colder seasons.",
+    "Men's Black Coat": "Crafted for a sharp and confident appearance, this piece complements formal wear while remaining practical for everyday use.",
+    "Men's Dark Brown Coat": "Designed with structure and comfort in mind, this coat delivers a refined look without sacrificing mobility.",
+    "Men's Charcoal Coat": "A minimalist essential that prioritizes comfort and clean design, making it ideal for daily wear."
+};
+
+if (productName && aboutDescriptions[productName]) {
+    document.getElementById("aboutText").textContent = aboutDescriptions[productName];
+}
+
+// TOAST
+function showToast(message) {
+    const toastEl = document.getElementById("cartToast");
+    const toastMsg = document.getElementById("toastMessage");
+
+    toastMsg.textContent = message;
+
+    const toast = new bootstrap.Toast(toastEl, {
+        delay: 2500,
+        autohide: true
+    });
+
+    toast.show();
+}
+</script>
+
+</body>
+</html>
