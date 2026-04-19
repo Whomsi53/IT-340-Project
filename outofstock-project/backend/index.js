@@ -8,7 +8,7 @@ app.use(express.json());
 
 // 🔌 Connect to MySQL (for now using NAT IP of DB)
 const db = mysql.createConnection({
-  host: '192.168.233.136', // <-- your db-server IP
+  host: '192.168.11.130', // <-- your db-server IP
   user: 'appuser',
   password: 'StrongPassword123!',
   database: 'outofstock'
