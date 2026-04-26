@@ -32,13 +32,15 @@
     </div>
 </div>
 
-<!-- ✅ TOAST element (matches your CSS) -->
+<!-- TOAST -->
 <div id="toast" class="toast"></div>
 
 <script>
 const API_URL = "/api";
 
+// ========================
 // REGISTER
+// ========================
 async function register(e) {
     e.preventDefault();
 
@@ -55,7 +57,9 @@ async function register(e) {
     showToast(data.message, data.success);
 }
 
-// LOGIN
+// ========================
+// LOGIN (🔥 FIXED PROPERLY)
+// ========================
 async function login(e) {
     e.preventDefault();
 
@@ -72,16 +76,29 @@ async function login(e) {
 
     showToast(data.message, data.success);
 
-    if (data.success) {
-        localStorage.setItem("user", username);
+    if (data.success && data.user) {
+
+        // 🔥 CLEAR OLD DATA (prevents weird bugs)
+        sessionStorage.clear();
+
+        // 🔥 SAVE USER (THIS FIXES EVERYTHING)
+        sessionStorage.setItem("user", JSON.stringify({
+            id: data.user.id,
+            username: data.user.username,
+            role: data.user.role
+        }));
+
+        console.log("SESSION SAVED:", sessionStorage.getItem("user"));
 
         setTimeout(() => {
-            window.location.href = "/dashboard.html";
-        }, 1200);
+            window.location.href = "/";
+        }, 600);
     }
 }
 
-// ✅ TOAST function (matches .toast CSS)
+// ========================
+// TOAST
+// ========================
 function showToast(message, success = true) {
     const toast = document.getElementById("toast");
 
