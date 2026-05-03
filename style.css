@@ -258,3 +258,70 @@ footer {
         gap: 14px;
     }
 }
+
+/* ===== AMAZON HOVER OVERLAY (ADDED ONLY) ===== */
+.card {
+    position: relative;
+    overflow: hidden;
+}
+
+.amazon-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    background: rgba(0,0,0,0.75);
+    color: white;
+
+    text-align: center;
+    padding: 10px;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    transform: translateY(100%);
+    transition: 0.25s ease;
+}
+
+.card:hover .amazon-overlay {
+    transform: translateY(0);
+}
+
+/* ===== FORCE NAVBAR CONSISTENCY ===== */
+
+header {
+    background: #333 !important;
+    color: white !important;
+    padding: 15px 20px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.nav-left {
+    flex: 1;
+}
+
+.nav-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.nav-center form {
+    width: 300px !important;
+    display: flex;
+    gap: 8px;
+}
+
+.nav-center input {
+    flex: 1;
+}
+
+.nav-right {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    align-items: center;
+}

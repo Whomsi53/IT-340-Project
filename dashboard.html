@@ -1,57 +1,381 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Dashboard</title>
-    <style>
-        body {
-            font-family: Arial;
-            background: #1e1e1e;
-            color: white;
-            text-align: center;
-            margin-top: 100px;
-        }
+<meta charset="UTF-8">
+<title>Dashboard</title>
 
-        .card {
-            background: #2a2a2a;
-            padding: 30px;
-            border-radius: 10px;
-            width: 300px;
-            margin: auto;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f0f10;
+    color: #eaeaea;
+}
 
-        button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: #81a8a0;
-            border: none;
-            color: white;
-            cursor: pointer;
-        }
-    </style>
+.container {
+    max-width: 850px;
+    margin: 40px auto;
+}
+
+.card {
+    background: #1a1a1d;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 10px;
+    margin: 6px 0;
+    border-radius: 6px;
+    border: none;
+    background: #2a2a2e;
+    color: white;
+}
+
+button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    background: #3a7d73;
+    color: white;
+    cursor: pointer;
+}
+
+.product, .user {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #232327;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.product img {
+    width: 60px;
+    border-radius: 6px;
+}
+
+.actions button {
+    margin-left: 6px;
+}
+
+#toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #222;
+    padding: 12px 16px;
+    border-radius: 8px;
+    opacity: 0;
+    transition: 0.3s;
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-box {
+    background: #1a1a1d;
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+}
+</style>
 </head>
+
 <body>
 
+<div id="toast"></div>
+
+<div class="container">
+
 <div class="card">
-    <h1>Dashboard</h1>
-    <p id="user"></p>
-    <button onclick="logout()">Logout</button>
+<h2>Dashboard</h2>
+<p id="userText"></p>
+<button onclick="goHome()">🏠 Home</button>
+<button onclick="logout()">Logout</button>
+</div>
+
+<div class="card">
+<h3>Create Product</h3>
+<input id="name" placeholder="Name">
+<input id="price" placeholder="Price">
+<input id="image" placeholder="Image URL">
+<textarea id="desc" placeholder="Description"></textarea>
+
+<!-- ADMIN ONLY CATEGORY -->
+<select id="categorySelect" style="display:none;">
+<option value="store">store</option>
+<option value="marketplace">marketplace</option>
+<option value="amazon">amazon</option>
+</select>
+
+<button onclick="createProduct()">Create</button>
+</div>
+
+<div class="card">
+<h3>Products</h3>
+<div id="products"></div>
+</div>
+
+<div class="card" id="usersBox">
+<h3>Users</h3>
+<div id="users"></div>
+</div>
+
+</div>
+
+<div id="modal" class="modal">
+<div class="modal-box" id="modalContent"></div>
 </div>
 
 <script>
-const username = localStorage.getItem("user");
+// ========================
+function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.opacity = "1";
+    setTimeout(() => t.style.opacity = "0", 2000);
+}
 
-if (!username) {
+// ========================
+const userId = localStorage.getItem("userId");
+const username = localStorage.getItem("username");
+const role = localStorage.getItem("role");
+
+// 🔥 HARD CHECK
+if (!userId || !role) {
     window.location.href = "/login/";
+}
+
+document.getElementById("userText").innerText =
+    `Welcome ${username} (${role})`;
+
+if (role === "admin") {
+    document.getElementById("categorySelect").style.display = "block";
 } else {
-    document.getElementById("user").innerText = "Welcome, " + username;
+    document.getElementById("usersBox").style.display = "none";
 }
 
-function logout() {
-    localStorage.removeItem("user");
-    window.location.href = "/login/";
+// ========================
+function goHome() { window.location.href = "/"; }
+function logout() { localStorage.clear(); window.location.href = "/login/"; }
+
+// ========================
+function openModal(html) {
+    document.getElementById("modalContent").innerHTML = html;
+    document.getElementById("modal").style.display = "flex";
 }
+
+function closeModal() {
+    document.getElementById("modal").style.display = "none";
+}
+
+// ========================
+// PRODUCTS (FIXED)
+// ========================
+async function loadProducts() {
+
+    const res = await fetch("/api/products", {
+        headers: { "x-user-id": userId }
+    });
+
+    const data = await res.json();
+
+    const container = document.getElementById("products");
+    container.innerHTML = "";
+
+    if (!data.success || data.products.length === 0) {
+        container.innerHTML = "<p>No products</p>";
+        return;
+    }
+
+    data.products.forEach(p => {
+
+        let actions = "";
+
+        if (role === "admin" || p.user_id == userId) {
+            actions = `
+                <button onclick="openProductEditor(${p.id}, \`${p.name}\`, ${p.price}, \`${p.image}\`, \`${p.description || ""}\`)">Edit</button>
+                <button onclick="deleteProduct(${p.id})">Delete</button>
+            `;
+        }
+
+        container.innerHTML += `
+        <div class="product">
+            <img src="${p.image || '/img/default.png'}">
+            <div>${p.name} - $${p.price}</div>
+            <div class="actions">${actions}</div>
+        </div>`;
+    });
+}
+
+// ========================
+async function createProduct() {
+
+    let category = "marketplace";
+
+    if (role === "admin") {
+        category = document.getElementById("categorySelect").value;
+    }
+
+    const res = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "x-user-id": userId
+        },
+        body: JSON.stringify({
+            name: document.getElementById("name").value,
+            price: parseFloat(document.getElementById("price").value),
+            image: document.getElementById("image").value,
+            description: document.getElementById("desc").value,
+            category
+        })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) return showToast("Create failed");
+
+    showToast("Created");
+    loadProducts();
+}
+
+// ========================
+function openProductEditor(id, name, price, image, desc) {
+    openModal(`
+        <h3>Edit Product</h3>
+        <input id="editName" value="${name}">
+        <input id="editPrice" value="${price}">
+        <input id="editImage" value="${image}">
+        <textarea id="editDesc">${desc}</textarea>
+        <button onclick="saveProduct(${id})">Save</button>
+        <button onclick="closeModal()">Cancel</button>
+    `);
+}
+
+// ========================
+async function saveProduct(id) {
+    const res = await fetch(`/api/products/${id}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "x-user-id": userId
+        },
+        body: JSON.stringify({
+            name: document.getElementById("editName").value,
+            price: parseFloat(document.getElementById("editPrice").value),
+            image: document.getElementById("editImage").value,
+            description: document.getElementById("editDesc").value
+        })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) return showToast("Update failed");
+
+    showToast("Updated");
+    closeModal();
+    loadProducts();
+}
+
+// ========================
+async function deleteProduct(id) {
+    await fetch(`/api/products/${id}`, {
+        method: "DELETE",
+        headers: { "x-user-id": userId }
+    });
+
+    showToast("Deleted");
+    loadProducts();
+}
+
+// ========================
+// USERS (ADMIN ONLY)
+// ========================
+async function loadUsers() {
+    if (role !== "admin") return;
+
+    const res = await fetch("/api/users", {
+        headers: { "x-user-id": userId }
+    });
+
+    const data = await res.json();
+
+    const container = document.getElementById("users");
+    container.innerHTML = "";
+
+    data.users.forEach(u => {
+        container.innerHTML += `
+        <div class="user">
+            ${u.username} (${u.role})
+            <div class="actions">
+                <button onclick="openUserEditor(${u.id}, '${u.role}')">Edit</button>
+                <button onclick="deleteUser(${u.id})">Delete</button>
+            </div>
+        </div>`;
+    });
+}
+
+// ========================
+function openUserEditor(id, currentRole) {
+    openModal(`
+        <h3>Edit User Role</h3>
+        <select id="editRole">
+            <option value="customer">customer</option>
+            <option value="seller">seller</option>
+            <option value="admin">admin</option>
+        </select>
+        <button onclick="saveUser(${id})">Save</button>
+        <button onclick="closeModal()">Cancel</button>
+    `);
+
+    document.getElementById("editRole").value = currentRole;
+}
+
+// ========================
+async function saveUser(id) {
+    const roleVal = document.getElementById("editRole").value;
+
+    await fetch(`/api/users/${id}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "x-user-id": userId
+        },
+        body: JSON.stringify({ role: roleVal })
+    });
+
+    showToast("User updated");
+    closeModal();
+    loadUsers();
+}
+
+// ========================
+async function deleteUser(id) {
+    await fetch(`/api/users/${id}`, {
+        method: "DELETE",
+        headers: { "x-user-id": userId }
+    });
+
+    showToast("Deleted");
+    loadUsers();
+}
+
+// ========================
+document.addEventListener("DOMContentLoaded", () => {
+    loadProducts();
+    loadUsers();
+});
 </script>
 
 </body>
