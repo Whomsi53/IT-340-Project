@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OutOfStock | Home</title>
+
+<link href="/style.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+
+/* PRODUCTS */
+.product-grid {
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 20px;
+}
+
+.card {
+    width: 200px;
+    border-radius: 12px;
+    padding: 15px;
+    background: #f4f4f4;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+/* IMAGE WRAP */
+.imgWrap {
+    position: relative;
+}
+
+.imgWrap img {
+    width: 100%;
+    border-radius: 10px;
+}
+
+/* AMAZON OVERLAY */
+.amazonOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    opacity: 0;
+    border-radius: 10px;
+    transition: 0.2s;
+}
+
+.imgWrap:hover .amazonOverlay {
+    opacity: 1;
+}
+
+/* TEXT */
+.productName {
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+.price {
+    font-weight: bold;
+}
+
+/* CATEGORY TAG */
+.tag {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.tag.store { color: #333; }
+.tag.marketplace { color: #2a7a7b; }
+.tag.amazon { color: #b07a00; }
+
+/* TOAST */
+#toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #333;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 8px;
+    opacity: 0;
+    transition: 0.3s;
+    z-index: 9999;
+}
+
+.section-title {
+    text-align: center;
+    margin: 40px 0 10px;
+    font-size: 24px;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<header></header>
+
+<div id="toast"></div>
+
+<main>
+
+<section>
+    <div class="section-title">OutOfStock</div>
+    <div id="storeProducts" class="product-grid"></div>
+</section>
+
+<section>
+    <div class="section-title">Marketplace</div>
+    <div id="marketProducts" class="product-grid"></div>
+</section>
+
+<section>
+    <div class="section-title">Amazon</div>
+    <div id="amazonProducts" class="product-grid"></div>
+</section>
+
+</main>
+
+<footer class="text-center p-3 bg-dark text-white">
+© 2026 OutOfStock
+</footer>
+
+<script src="/navbar.js"></script>
+
+<script>
+// ========================
+function showToast(msg) {
+    const t = document.getElementById("toast");
+    if (!t) return;
+    t.textContent = msg;
+    t.style.opacity = "1";
+    setTimeout(() => t.style.opacity = "0", 2000);
+}
+
+// ========================
+function getTag(category) {
+    if (category === "store") return "OutOfStock";
+    if (category === "marketplace") return "Marketplace";
+    if (category === "amazon") return "Amazon";
+    return "";
+}
+
+// ========================
+async function loadProducts() {
+    const store = document.getElementById("storeProducts");
+    const market = document.getElementById("marketProducts");
+    const amazon = document.getElementById("amazonProducts");
+
+    try {
+        const res = await fetch("http://192.168.11.131:3000/api/products");
+        const data = await res.json();
+
+        store.innerHTML = "";
+        market.innerHTML = "";
+        amazon.innerHTML = "";
+
+        data.products.forEach(p => {
+
+            const card = document.createElement("div");
+            card.className = "card";
+
+            card.innerHTML = `
+                <div class="imgWrap">
+                    <img src="${p.image || '/img/default.png'}">
+                    ${p.category === "amazon" ? `<div class="amazonOverlay">Shop on Amazon</div>` : ""}
+                </div>
+
+                <div class="tag ${p.category}">${getTag(p.category)}</div>
+                <div class="productName">${p.name}</div>
+                <div class="price">$${p.price}</div>
+            `;
+
+            // ✅ FIXED LOGIC (AMAZON NEVER GOES TO PRODUCT PAGE)
+            card.onclick = () => {
+                if (p.category === "amazon") {
+                    if (p.link && p.link.trim() !== "") {
+                        window.open(p.link, "_blank");
+                    } else {
+                        showToast("Amazon link missing");
+                    }
+                    return;
+                }
+
+                window.location.href = "/product_template/index.html?id=" + p.id;
+            };
+
+            if (p.category === "store") {
+                store.appendChild(card);
+            } else if (p.category === "marketplace") {
+                market.appendChild(card);
+            } else if (p.category === "amazon") {
+                amazon.appendChild(card);
+            }
+        });
+
+    } catch (err) {
+        console.error(err);
+        showToast("Failed to load products");
+    }
+}
+
+// ========================
+document.addEventListener("DOMContentLoaded", () => {
+
+    renderNavbar();
+    updateNavbar();
+
+    setTimeout(() => {
+        if (typeof setupSearch === "function") {
+            setupSearch();
+        }
+    }, 200);
+
+    loadProducts();
+});
+</script>
+
+</body>
+</html>

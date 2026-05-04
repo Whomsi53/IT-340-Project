@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OutOfStock | Product</title>
+
+<link href="/style.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body { display:flex; flex-direction:column; min-height:100vh; }
+main { flex:1; }
+
+.product-container { max-width:900px; margin:40px auto; }
+.product-img { width:100%; border-radius:12px; }
+
+.price { font-size:22px; font-weight:bold; margin-top:10px; }
+
+.review-card {
+    border:1px solid #ddd;
+    padding:10px;
+    margin-top:10px;
+    border-radius:8px;
+}
+
+#toast {
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    background:#333;
+    color:white;
+    padding:12px 18px;
+    border-radius:8px;
+    opacity:0;
+    transition:0.3s;
+    z-index:9999;
+}
+</style>
+</head>
+
+<body>
+
+<header></header>
+
+<main>
+<div id="toast"></div>
+
+<div class="container product-container">
+
+    <div class="row">
+        <div class="col-md-5">
+            <img id="productImg" class="product-img">
+        </div>
+
+        <div class="col-md-7" id="productInfo">
+            <h2 id="productName"></h2>
+            <div class="price"></div>
+
+            <p id="productDesc"></p>
+
+            <!-- NEW BUTTON -->
+            <button class="btn btn-outline-primary mb-2" onclick="generateSummary()">
+                Generate Summary
+            </button>
+
+            <p id="summaryOutput" style="font-weight:500;"></p>
+
+            <button id="addCartBtn" class="btn btn-dark mt-3" onclick="addToCart()">
+                Add to Cart
+            </button>
+        </div>
+    </div>
+
+    <hr>
+
+    <div id="reviewsBlock">
+        <h4>Reviews</h4>
+        <div id="reviewsList"></div>
+
+        <div class="mt-3">
+            <textarea id="reviewText" class="form-control mb-2" placeholder="Write a review..."></textarea>
+            <select id="reviewRating" class="form-select mb-2">
+                <option value="5">5 Stars</option>
+                <option value="4">4 Stars</option>
+                <option value="3">3 Stars</option>
+                <option value="2">2 Stars</option>
+                <option value="1">1 Star</option>
+            </select>
+            <button class="btn btn-primary" onclick="submitReview()">Submit</button>
+        </div>
+    </div>
+
+</div>
+</main>
+
+<footer class="text-center p-3 bg-dark text-white">
+© 2026 OutOfStock
+</footer>
+
+<script src="/navbar.js"></script>
+
+<script>
+
+// ===== TOAST =====
+function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.opacity = "1";
+    setTimeout(() => t.style.opacity = "0", 2000);
+}
+
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
+
+let currentProduct = null;
+let currentReviews = [];
+
+// ===== SAFE FETCH =====
+async function safeFetch(url, options = {}) {
+    const res = await fetch(url, options);
+    const text = await res.text();
+
+    try {
+        return { ok: res.ok, data: JSON.parse(text) };
+    } catch {
+        console.error("NON JSON:", text);
+        return { ok:false, data:{} };
+    }
+}
+
+// ===== LOAD PRODUCT =====
+async function loadProduct() {
+
+    const res = await safeFetch("/api/products");
+    if(!res.ok) return;
+
+    const products = res.data.products || [];
+    const p = products.find(x => String(x.id) === String(id));
+    if (!p) return;
+
+    if (p.category && p.link && p.category.toLowerCase() === "amazon") {
+        window.location.replace(p.link);
+        return;
+    }
+
+    currentProduct = p;
+
+    document.getElementById("productName").textContent = p.name;
+    document.querySelector(".price").textContent = "$" + p.price;
+    document.getElementById("productImg").src = p.image || "/img/default.png";
+    document.getElementById("productDesc").textContent = p.description || "";
+}
+
+// ===== GENERATE SUMMARY (NEW CORE LOGIC) =====
+function generateSummary(){
+
+    if (!currentReviews.length) {
+        document.getElementById("summaryOutput").textContent =
+            "No reviews yet — be the first to rate this product.";
+        return;
+    }
+
+    const avg =
+        currentReviews.reduce((sum, r) => sum + (r.rating || 0), 0) /
+        currentReviews.length;
+
+    let message = "";
+
+    if (avg >= 4.5) {
+        message = "Highly rated — customers love this product.";
+    } else if (avg >= 3.5) {
+        message = "Generally positive feedback with minor drawbacks.";
+    } else if (avg >= 2.5) {
+        message = "Mixed reviews — consider before purchasing.";
+    } else {
+        message = "Low ratings — many users report issues.";
+    }
+
+    document.getElementById("summaryOutput").textContent =
+        `⭐ ${avg.toFixed(1)} / 5 — ${message}`;
+}
+
+// ===== LOAD REVIEWS =====
+async function loadReviews() {
+
+    const res = await safeFetch("/api/reviews/" + id);
+    if(!res.ok) return;
+
+    const list = document.getElementById("reviewsList");
+    list.innerHTML = "";
+
+    currentReviews = res.data.reviews || [];
+
+    if (!currentReviews.length) {
+        list.innerHTML = "<p>No reviews yet.</p>";
+        return;
+    }
+
+    currentReviews.forEach(r => {
+        const div = document.createElement("div");
+        div.className = "review-card";
+
+        div.innerHTML = `
+            <strong>${r.username || "User"}</strong>
+            <div>${"★".repeat(r.rating || 0)}</div>
+            <p>${r.comment || ""}</p>
+        `;
+
+        list.appendChild(div);
+    });
+}
+
+// ===== SUBMIT REVIEW =====
+async function submitReview() {
+
+    const text = document.getElementById("reviewText").value.trim();
+    const rating = document.getElementById("reviewRating").value;
+    const userId = localStorage.getItem("userId");
+
+    if (!text) return showToast("Write something first");
+    if (!userId) return showToast("Login required");
+
+    const res = await safeFetch("/api/reviews", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "x-user-id": userId
+        },
+        body: JSON.stringify({
+            productId: Number(id),
+            comment: text,
+            rating
+        })
+    });
+
+    if (!res.ok || !res.data.success) {
+        showToast("Review failed");
+        return;
+    }
+
+    showToast("Review submitted ⭐");
+    document.getElementById("reviewText").value = "";
+    loadReviews();
+}
+
+// ===== INIT =====
+document.addEventListener("DOMContentLoaded", () => {
+    renderNavbar();
+    updateNavbar();
+    loadProduct();
+    loadReviews();
+});
+
+</script>
+
+</body>
+</html>

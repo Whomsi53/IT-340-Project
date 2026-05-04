@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dashboard</title>
+
+<style>
+body { background:#0f1419; color:#e6edf3; font-family:Arial; margin:0; }
+.container{ display:flex; gap:20px; padding:20px; }
+.main{ flex:3; }
+.sidebar{ flex:1; }
+
+.card{
+    background:#1c222c;
+    padding:20px;
+    border-radius:12px;
+    margin-bottom:20px;
+}
+
+input, textarea, select{
+    width:100%;
+    padding:10px;
+    margin:6px 0;
+    background:#2a3240;
+    border:none;
+    border-radius:6px;
+    color:white;
+}
+
+button{
+    padding:8px 12px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    background:#3ecf8e;
+    color:black;
+    margin-top:6px;
+}
+
+.product, .user, .ticket{
+    background:#2a3240;
+    padding:10px;
+    border-radius:6px;
+    margin:6px 0;
+}
+
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    padding:20px;
+}
+
+.modal{
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:#1c222c;
+    padding:20px;
+    border-radius:12px;
+    display:none;
+    width:400px;
+    z-index:9999;
+}
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
+    <h2 id="userText"></h2>
+    <div>
+        <button onclick="location.href='/'">Home</button>
+        <button onclick="logout()">Logout</button>
+    </div>
+</div>
+
+<div class="container">
+
+<div class="main">
+
+<div class="card">
+<h3>Create Product</h3>
+
+<input id="name" placeholder="Name">
+<input id="price" placeholder="Price">
+<input id="image" placeholder="Image URL">
+<textarea id="desc" placeholder="Description"></textarea>
+
+<select id="categorySelect">
+<option value="store">Store</option>
+<option value="marketplace">Marketplace</option>
+<option value="amazon">Amazon</option>
+</select>
+
+<input id="amazonLink" placeholder="Amazon Link (optional)">
+
+<button onclick="createProduct()">Create</button>
+</div>
+
+<div class="card">
+<h3>Products</h3>
+<div id="products"></div>
+</div>
+
+<div class="card" id="usersCard">
+<h3>Users</h3>
+<div id="users"></div>
+</div>
+
+</div>
+
+<div class="sidebar">
+<div class="card" id="ticketsCard">
+<h3>Tickets</h3>
+<div id="ticketList"></div>
+</div>
+</div>
+
+</div>
+
+<div id="editModal" class="modal">
+<h3>Edit Product</h3>
+
+<input id="editName">
+<input id="editPrice">
+<input id="editImage">
+<textarea id="editDesc"></textarea>
+
+<select id="editCategory">
+<option value="store">Store</option>
+<option value="marketplace">Marketplace</option>
+<option value="amazon">Amazon</option>
+</select>
+
+<input id="editAmazonLink">
+
+<button onclick="saveEdit()">Save</button>
+<button onclick="closeModal()">Cancel</button>
+</div>
+
+<script>
+
+const userId = localStorage.getItem("userId");
+const username = localStorage.getItem("username");
+const role = localStorage.getItem("role");
+
+const isSeller = role === "seller";
+const isAdmin = role === "admin";
+
+document.getElementById("userText").innerText =
+    `Welcome ${username} (${role})`;
+
+function logout(){
+    localStorage.clear();
+    location.href="/";
+}
+
+let productCache = [];
+let editingId = null;
+
+// ========================
+// 🔥 ROLE UI LOCK (KEY FIX)
+// ========================
+if (isSeller) {
+    // hide users + tickets
+    document.getElementById("usersCard").style.display = "none";
+    document.getElementById("ticketsCard").style.display = "none";
+
+    // lock category
+    const category = document.getElementById("categorySelect");
+    category.value = "store";
+    category.disabled = true;
+
+    // hide amazon link
+    document.getElementById("amazonLink").style.display = "none";
+
+    // remove amazon option
+    [...category.options].forEach(opt=>{
+        if(opt.value === "amazon") opt.remove();
+    });
+
+    // edit modal lock
+    const editCategory = document.getElementById("editCategory");
+    editCategory.value = "store";
+    editCategory.disabled = true;
+
+    document.getElementById("editAmazonLink").style.display = "none";
+
+    [...editCategory.options].forEach(opt=>{
+        if(opt.value === "amazon") opt.remove();
+    });
+}
+
+// SAFE FETCH
+async function safeFetch(url, options = {}) {
+    const res = await fetch(url, options);
+    const text = await res.text();
+    try { return { ok: res.ok, data: JSON.parse(text) }; }
+    catch { return { ok:false, data:{ error:text } }; }
+}
+
+///////////////////////////
+// CREATE
+///////////////////////////
+async function createProduct(){
+
+    const nameEl = document.getElementById("name");
+    const priceEl = document.getElementById("price");
+    const imageEl = document.getElementById("image");
+    const descEl = document.getElementById("desc");
+    const category = document.getElementById("categorySelect").value;
+    const link = document.getElementById("amazonLink").value.trim();
+
+    if(!nameEl.value.trim() || !priceEl.value){
+        return alert("Missing required fields");
+    }
+
+    if(category === "amazon" && !link){
+        return alert("Amazon link required for Amazon products");
+    }
+
+    const payload = {
+        name: nameEl.value.trim(),
+        description: descEl.value.trim(),
+        price: Number(priceEl.value),
+        image: imageEl.value.trim(),
+        category,
+        link: category === "amazon" ? link : null
+    };
+
+    const res = await safeFetch("/api/products",{
+        method:"POST",
+        headers:{ "Content-Type":"application/json","x-user-id":userId },
+        body: JSON.stringify(payload)
+    });
+
+    if(!res.ok || !res.data.success){
+        return alert(res.data.error || "Create failed");
+    }
+
+    nameEl.value = "";
+    priceEl.value = "";
+    imageEl.value = "";
+    descEl.value = "";
+    document.getElementById("amazonLink").value = "";
+
+    loadProducts();
+}
+
+///////////////////////////
+// PRODUCTS
+///////////////////////////
+async function loadProducts(){
+    const res = await safeFetch("/api/products");
+    if(!res.ok) return;
+
+    productCache = res.data.products;
+
+    const container = document.getElementById("products");
+    container.innerHTML="";
+
+    productCache.forEach(p=>{
+
+        // 🔐 extra UI safety
+        if(isSeller && Number(p.user_id) !== Number(userId)) return;
+
+        container.innerHTML += `
+        <div class="product">
+            <b>${p.name}</b> - $${p.price}
+            <br>
+            <button onclick="openEdit(${p.id})">Edit</button>
+            <button onclick="deleteProduct(${p.id})">Delete</button>
+        </div>`;
+    });
+}
+
+///////////////////////////
+// INIT
+///////////////////////////
+loadProducts();
+if(isAdmin) loadUsers();
+if(isAdmin) loadTickets();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,327 @@
+:root {
+    --max-width: 1200px;
+    --header-height: 70px;
+}
+
+/* ===== GLOBAL ===== */
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: "Inter", "Helvetica Neue", Arial;
+    display: flex;
+    flex-direction: column;
+    background: #f3f3f3;
+}
+
+/* ===== HEADER (POLISHED) ===== */
+header {
+    width: 100%;
+    background: #4a4949;
+    color: #fff;
+
+    height: var(--header-height);
+
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+
+    padding: 0 25px;
+}
+
+/* LOGO */
+.brand h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* ===== NAV CENTER (FIXED SEARCH) ===== */
+.nav-center {
+    display: flex;
+    justify-content: center;
+}
+
+/* 🔥 CLEAN SEARCH BAR */
+.search {
+    width: 100%;
+    max-width: 420px;
+    height: 36px;
+
+    display: flex;
+    align-items: center;
+
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #d0d0d0;
+
+    overflow: hidden;
+}
+
+/* INPUT */
+.search input {
+    border: none;
+    outline: none;
+    padding: 0 12px;
+    font-size: 14px;
+    flex: 1;
+    height: 100%;
+}
+
+/* BUTTON */
+.search button {
+    height: 100%;
+    padding: 0 14px;
+    border: none;
+    background: #2c2c2c;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.search button:hover {
+    background: #000;
+}
+
+/* ===== NAV RIGHT ===== */
+.nav-right {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.nav-right a {
+    color: #fff;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+.nav-right a:hover {
+    opacity: 0.75;
+}
+
+/* ===== MAIN ===== */
+main {
+    flex: 1;
+    width: 100%;
+    max-width: var(--max-width);
+
+    margin: 40px auto;
+    padding: 0 20px 120px;
+}
+
+/* ===== PRODUCT GRID ===== */
+.product-grid {
+    padding-top: 40px;
+
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 24px;
+}
+
+/* ===== CARDS ===== */
+.card {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+div.card {
+    border: transparent !important;
+    background-color: #ece9e9 !important;
+    border-radius: 12px !important;
+}
+
+/* PRODUCT PAGE CARD */
+.product-template-card {
+    width: 100%;
+    max-width: 1000px;
+    margin: auto;
+    padding: 20px;
+}
+
+/* ===== IMAGE ===== */
+.prod-img {
+    width: 100%;
+    height: 270px;
+    object-fit: cover;
+    border-radius: 11px;
+}
+
+/* ===== TEXT ===== */
+.card p {
+    margin: 0;
+    font-weight: 700;
+    font-size: 15px;
+    color: #555;
+}
+
+.productName {
+    font-size: 14px;
+    margin: 0;
+}
+
+.price {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+/* ===== BUTTONS ===== */
+.cart-btn {
+    width: 50px;
+    height: 35px;
+
+    border: 2px solid #000;
+    border-radius: 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: transparent;
+    cursor: pointer;
+}
+
+.size-btn {
+    font-weight: 600;
+
+    width: 60px;
+    height: 34px;
+
+    border: 2px solid #a19d9d;
+    border-radius: 5px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: transparent;
+    cursor: pointer;
+}
+
+.add-to-cart {
+    border-radius: 12px;
+    background-color: #222;
+    color: white;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.add-to-cart:hover {
+    background-color: #000;
+}
+
+/* ===== REVIEWS ===== */
+.reviews-section {
+    max-width: 800px;
+    margin: 60px auto;
+    padding-bottom: 100px;
+}
+
+/* ===== FOOTER ===== */
+footer {
+    background: #131212;
+    color: #ddd;
+
+    padding: 14px 20px;
+    text-align: center;
+    font-size: 13px;
+
+    width: 100%;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 720px) {
+    .search {
+        max-width: 100%;
+    }
+
+    header {
+        padding: 0 15px;
+    }
+
+    .product-grid {
+        gap: 14px;
+    }
+}
+
+/* ===== AMAZON HOVER OVERLAY (ADDED ONLY) ===== */
+.card {
+    position: relative;
+    overflow: hidden;
+}
+
+.amazon-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    background: rgba(0,0,0,0.75);
+    color: white;
+
+    text-align: center;
+    padding: 10px;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    transform: translateY(100%);
+    transition: 0.25s ease;
+}
+
+.card:hover .amazon-overlay {
+    transform: translateY(0);
+}
+
+/* ===== FORCE NAVBAR CONSISTENCY ===== */
+
+header {
+    background: #333 !important;
+    color: white !important;
+    padding: 15px 20px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.nav-left {
+    flex: 1;
+}
+
+.nav-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.nav-center form {
+    width: 300px !important;
+    display: flex;
+    gap: 8px;
+}
+
+.nav-center input {
+    flex: 1;
+}
+
+.nav-right {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    align-items: center;
+}
